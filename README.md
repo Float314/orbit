@@ -43,6 +43,7 @@ To use this,
 - **Specific compiler** - Yes you can, By default its clang. Refer to Compiler Options for this one
   Use it like - `--compiler-id=<id>` OR `--use-compiler=<name>`
 - Unity - use this `--unity`
+- Use `rmbuild` to remove the build directory if something went wrong 
 
 ## Compiler Options
 

@@ -3,10 +3,11 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 // heehee
 
-enum class Action { None, Config, Make, Build };
+enum class Action { None, Config, Make, Build, RmBuild };
 enum class Compiler { Gcc = 1, Clang = 2, ClangCl = 3, Msvc = 4 };
 
 struct Options {
@@ -19,9 +20,10 @@ struct Options {
 void printUsage(const char* programName) {
     std::cout << "Usage: " << programName << " <command> [options]\n\n"
               << "Commands:\n"
-              << "  config  Configure the cmake project\n"
-              << "  make    Build the project\n"
-              << "  build   Configure and build the project\n\n"
+              << "  config   Configure the cmake project\n"
+              << "  make     Build the project\n"
+              << "  build    Configure and build the project\n"
+              << "  rmbuild  Remove the build directory\n\n"
               << "Options:\n"
               << "  --ninja              Use Ninja generator\n"
               << "  --compiler-id=<id>   Set compiler (1=gcc, 2=clang, 3=clang-cl, 4=msvc)\n"
@@ -52,6 +54,7 @@ Options parseArgs(int argc, char* argv[]) {
         if (arg == "config") opts.action = Action::Config;
         else if (arg == "make") opts.action = Action::Make;
         else if (arg == "build") opts.action = Action::Build;
+        else if (arg == "rmbuild") opts.action = Action::RmBuild;
         else if (arg == "--ninja") opts.useNinja = true;
         else if (arg == "--unity") opts.unity = true;
         else if (arg == "--help" || arg == "-h") {
@@ -116,6 +119,22 @@ int buildProject() {
     return runCommand(cmd);
 }
 
+int removeBuildDir() {
+    std::error_code ec;
+    if (std::filesystem::exists(getBuildDir(), ec)) {
+        std::cout << "Removing build directory...\n";
+        std::filesystem::remove_all(getBuildDir(), ec);
+        if (ec) {
+            std::cerr << "Failed to remove build directory: " << ec.message() << "\n";
+            return 1;
+        }
+        std::cout << "Build directory removed.\n";
+    } else {
+        std::cout << "Build directory does not exist.\n";
+    }
+    return 0;
+}
+
 int main(int argc, char* argv[]) { // char* argv[]
     if (argc < 2) {
         printUsage("ORBIT");
@@ -125,7 +144,7 @@ int main(int argc, char* argv[]) { // char* argv[]
     Options opts = parseArgs(argc, argv);
 
     if (opts.action == Action::None) {
-        std::cerr << "Error: No command specified. Use 'config', 'make', or 'build'\n";
+        std::cerr << "Error: No command specified. Use 'config', 'make', 'build', or 'rmbuild'\n";
         return 1;
     }
 
@@ -143,6 +162,13 @@ int main(int argc, char* argv[]) { // char* argv[]
         result = buildProject();
         if (result != 0) {
             std::cerr << "Build failed!\n";
+            return result;
+        }
+    }
+
+    if (opts.action == Action::RmBuild) {
+        result = removeBuildDir();
+        if (result != 0) {
             return result;
         }
     }
