@@ -1,0 +1,132 @@
+name: Multi-Platform CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        compiler: [gcc, clang]
+        include:
+          - os: windows-latest
+            compiler: clang-cl
+          - os: windows-latest
+            compiler: msvc
+        exclude:
+          - os: ubuntu-latest
+            compiler: clang-cl
+          - os: ubuntu-latest
+            compiler: msvc
+          - os: macos-latest
+            compiler: clang-cl
+          - os: macos-latest
+            compiler: msvc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GCC (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ gcc
+
+      - name: Install Clang (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'clang'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang++ clang
+
+      - name: Install Ninja (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y ninja-build
+
+      - name: Install Ninja (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install ninja
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build `
+            -G ${{ matrix.os == 'windows-latest' && matrix.compiler == 'msvc' && 'Visual Studio 17 2022' || 'Ninja' }} `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_CXX_COMPILER=${{
+              matrix.compiler == 'gcc' && 'g++' ||
+              matrix.compiler == 'clang' && 'clang++' ||
+              matrix.compiler == 'clang-cl' && 'clang-cl' ||
+              matrix.compiler == 'msvc' && 'cl'
+            }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: |
+          if (Test-Path "build/ORBIT.exe") { ./build/ORBIT.exe --help }
+          elseif (Test-Path "build/ORBIT") { ./build/ORBIT --help }
+
+  unity-builds:
+    name: Unity / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ninja
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y ninja-build
+        continue-on-error: true
+
+      - name: Install Ninja (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install ninja
+        continue-on-error: true
+
+      - name: Configure with Unity
+        run: |
+          cmake -S . -B build `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_UNITY_BUILD=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+  clang-cl:
+    name: Windows Clang-CL
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Clang
+        run: |
+          winget install LLVM.LLVM --silent --accept-source-agreements --accept-package-agreements
+          refreshenv
+          & "C:\Program Files\LLVM\bin\clang-cl.exe" --version
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_CXX_COMPILER="clang-cl" \
+            -DCMAKE_C_COMPILER="clang-cl"
+
+      - name: Build
+        run: cmake --build build --parallel
