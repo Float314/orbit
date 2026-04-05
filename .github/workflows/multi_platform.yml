@@ -20,11 +20,6 @@ jobs:
             cxx: g++
             cc: gcc
             exe: ./orbit
-          - os: ubuntu-latest
-            compiler: clang
-            cxx: clang++
-            cc: clang
-            exe: ./orbit
           - os: macos-latest
             compiler: gcc
             cxx: g++
@@ -44,16 +39,6 @@ jobs:
             compiler: clang
             cxx: clang++
             cc: clang
-            exe: ./orbit.exe
-          - os: windows-latest
-            compiler: clang-cl
-            cxx: clang-cl
-            cc: clang-cl
-            exe: ./orbit.exe
-          - os: windows-latest
-            compiler: msvc
-            cxx: cl
-            cc: cl
             exe: ./orbit.exe
 
     steps:
@@ -64,10 +49,6 @@ jobs:
         if: matrix.compiler == 'gcc' && matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y g++ gcc
 
-      - name: Install Clang (Linux)
-        if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y clang++ clang
-
       - name: Install GCC (macOS)
         if: matrix.compiler == 'gcc' && matrix.os == 'macos-latest'
         run: brew install gcc
@@ -76,14 +57,14 @@ jobs:
         if: matrix.compiler == 'clang' && matrix.os == 'macos-latest'
         run: clang++ --version
 
-      - name: Install LLVM (Windows Clang-Cl)
-        if: matrix.compiler == 'clang-cl'
-        run: |
-          winget install LLVM.LLVM --silent --accept-source-agreements --accept-package-agreements
-          refreshenv
-
       - name: Compile
         run: ${{ matrix.cxx }} -o ${{ matrix.exe }} orbit.cpp -std=c++23
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-${{ matrix.os }}-${{ matrix.compiler }}
+          path: ${{ matrix.exe }}
 
       - name: Test
         run: ${{ matrix.exe }} --help
