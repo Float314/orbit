@@ -3,10 +3,9 @@
 Holy Gd refrence
 ---
 
-Hello there! Today i present you one of my useful programming stuff, Orbit.
-Always had a pain about "omg idek this cmake hell" ? Well, fear not! 
+Hello there! Today We present you one of our useful Wrapper, Orbit!
+Always had a pain about CMake build Hell ? Well, fear not! 
 
-I made this as an 'own personal use thingy' but oh well. I just had to github.
 
 ---
 
