@@ -1,6 +1,6 @@
 /*
     Orbit - A simple CMake build system wrapper for C++ projects
-    Copyright (C) 2026 Cyphrixz
+    Copyright (C) 2026 Orbier Group of Libraries and Co.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
