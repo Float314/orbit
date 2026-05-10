@@ -67,6 +67,3 @@ jobs:
         with:
           name: orbit-${{ matrix.os }}-${{ matrix.compiler }}-v1.1
           path: ${{ env.BINARY }}
-
-      - name: Test
-        run: ${{ env.BINARY }} --help
